@@ -15,4 +15,4 @@ server.o: server.c
 clean:
 	rm -rf *.o  client server
 	rm -rf client server
-	rm -rf client serveur
+	rm -rf client server

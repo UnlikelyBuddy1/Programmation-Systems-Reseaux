@@ -10,7 +10,6 @@
 #include <arpa/inet.h>
 
 #define RCVSIZE 508
-void printArray(char array[]);
 
 int main (int argc, char *argv[]) {
 
@@ -75,8 +74,8 @@ int main (int argc, char *argv[]) {
     printf("[OK] Buffer to receive created %d\n", n);
     
     if(strcmp(buffer,"SYN")==0){
-        printf("[INFO] The buffer is :\n");
-        printArray(buffer); 
+        printf("[INFO] The buffer is :\n"); 
+        printf("[DATA] %s\n", buffer);
         char synack[13];
         char port_udp2_s[6];
         strcpy(synack, "SYN-ACK");
@@ -85,7 +84,7 @@ int main (int argc, char *argv[]) {
         strcpy(buffer, synack);
         printf("[INFO] Sending for SYN-ACK...\n");
         printf("[INFO] The buffer is :\n");
-        printArray(buffer);
+        printf("[DATA] %s\n", buffer);
         // En multi client il faut creer le thread avant de envoyer le synack
         // faire lecture fichier -> envoi -> réecriture
         sendto(server_desc_udp, (char *)buffer, strlen(buffer),MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
@@ -93,7 +92,7 @@ int main (int argc, char *argv[]) {
         n = recvfrom(server_desc_udp, (char *)buffer, RCVSIZE,MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len);
         buffer[n] = '\0';
         printf("[INFO] The buffer is :\n");
-        printArray(buffer); 
+        printf("[DATA] %s\n", buffer);
         if(strcmp(buffer,"ACK")==0){
             printf("[OK] ACK received, succesful connection\n");
         // Handshake reussi !
@@ -127,7 +126,7 @@ int main (int argc, char *argv[]) {
         printf("[OK] Message is : %s\n", filename);
 
         fichier = NULL;
-        char fileACK[3]={'A', 'C', 'K'};
+        char fileACK[4]={'A', 'C', 'K', '\0'};
         if((fichier=fopen(filename,"r"))==NULL){
             printf("[ERR] File %s does not exist\n", filename);
             strcpy(fileACK, "NAC");
@@ -141,7 +140,7 @@ int main (int argc, char *argv[]) {
         sendto(server_desc_udp2, (char *)sendBuffer, strlen(sendBuffer),MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
         printf("[OK] Sent %s\n", fileACK);   
         
-        if(fileACK=="NAC"){
+        if(strcmp(fileACK, "NAC")==0){
             exit(-1);
         }
         stpcpy(buffer, filename);
@@ -157,10 +156,10 @@ int main (int argc, char *argv[]) {
         }
         fclose(fichier);
         
-        printf("[INFO] File has a size of %d bytes\n",length);
+        printf("[INFO] File has a size of %lu bytes\n",length);
 
         int nb_morceaux;
-        printf("[INFO] Checking if fragmentation is needed ...\n",length);
+        printf("[INFO] Checking if fragmentation is needed ...\n");
         if((length % (RCVSIZE-6)) != 0){
             nb_morceaux = (length/(RCVSIZE-6))+1;
         } else {
@@ -174,7 +173,7 @@ int main (int argc, char *argv[]) {
 
         printf("[INFO] Buffer size is : %d\n", n);
         buffer[n] = '\0';
-        printf("\n");
+
         for(int num_seq=0;num_seq < nb_morceaux;num_seq++){
             memcpy(buffer+6, buffer_lecture+((RCVSIZE-6)*num_seq), RCVSIZE-6);
             strcpy(num_seq_tot, "000000");
@@ -184,7 +183,7 @@ int main (int argc, char *argv[]) {
             }
             memcpy(buffer,num_seq_tot, 6);
             printf("[INFO] Sending file %d/%d ...\r",num_seq, nb_morceaux-1);
-            printf("[INFO]Copying %d bytes from %x to %x\r", RCVSIZE-6, buffer_lecture+((RCVSIZE-6)*num_seq), buffer+6);
+            //printf("[INFO]Copying %d bytes from %s to %s\r", RCVSIZE-6, buffer_lecture+((RCVSIZE-6)*num_seq), buffer+6);
             printf("[OK] Sequence number is %s\r", num_seq_tot);
             ack = 0;
             while(ack == 0){
@@ -197,7 +196,6 @@ int main (int argc, char *argv[]) {
                 }
             }
         }
-        printf("\n");
         // ToDo retransmission si pas ack
 
         sendto(server_desc_udp2,"FIN", strlen("FIN"),MSG_CONFIRM, (const struct sockaddr *) &cliaddr,len);
@@ -207,13 +205,4 @@ int main (int argc, char *argv[]) {
         printf("[OK] Received FINAL ACK\n");
     }        
     return 0;
-}
-
-void printArray(char array[]){
-    int length = sizeof(array);
-    printf("[MSG] ");
-    for(int i=0; i<length; i++){
-        printf("%c", array[i]);
-    }
-    printf("\n");
 }

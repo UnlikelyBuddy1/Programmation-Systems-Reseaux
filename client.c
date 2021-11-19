@@ -14,7 +14,7 @@
 int main (int argc, char *argv[]) {
     
     struct sockaddr_in adresse;
-    FILE *file;
+    //FILE *file;
     int port,port2 = 5001;
     char msg[RCVSIZE];
     char *buffer_ecriture = malloc (sizeof(char)*104857600);
@@ -79,11 +79,11 @@ int main (int argc, char *argv[]) {
         fgets(msg, RCVSIZE, stdin);
         strcpy(msg,strtok(msg, "\n"));
         strcpy(nom_fichier,msg);
-        printf("Le nom du fichier est : %s\n",nom_fichier); 
+        printf("[OK] Name of file is : %s\n",nom_fichier); 
         sendto(server_desc,(const char*)msg, strlen(msg),MSG_CONFIRM, (const struct sockaddr *) &adresse,sizeof(adresse)); 
         n = recvfrom(server_desc, (char *)msg, RCVSIZE,MSG_WAITALL, (struct sockaddr *) &adresse,&len);
         if (strstr(msg, "ACK") != NULL) {
-            printf("[OK] ACK received");
+            printf("[OK] ACK received\n");
         } else if (strstr(msg, "NAC") != NULL) {
             printf("[ERR] sever can't find file or connection is lost");
         }
@@ -95,7 +95,7 @@ int main (int argc, char *argv[]) {
             msg[n]='\0';
            
             if(strcmp(msg,"FIN")==0){
-                printf("On a recu FIN\n");
+                printf("[OK] Received EOF signal\n");
                 fini = 1;
                 sendto(server_desc,"ACK", strlen("ACK"),MSG_CONFIRM, (const struct sockaddr *) &adresse,sizeof(adresse));   
             }else{
