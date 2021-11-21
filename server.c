@@ -119,7 +119,7 @@ int main (int argc, char *argv[]) {
     tv.tv_sec = 0;
     tv.tv_usec = 100000;
     setsockopt(server_desc_udp2, SOL_SOCKET, SO_RCVTIMEO, &tv,sizeof(tv));
-    
+    unsigned short errors=0;
     while(1) {
         printf("[INFO] Waiting for message being name of file to send ...\n");
         
@@ -190,17 +190,23 @@ int main (int argc, char *argv[]) {
                 num_seq_tot[strlen(num_seq_tot)-i]=num_seq_s[strlen(num_seq_s)-i];
             }
             memcpy(buffer,num_seq_tot, 6);
-            printf("[INFO] Sending file %d/%d ...\r",num_seq, nb_morceaux-1);
+            printf("[INFO] Sending file %d/%d ...",num_seq, nb_morceaux-1);
             //printf("[INFO]Copying %d bytes from %s to %s\r", RCVSIZE-6, buffer_lecture+((RCVSIZE-6)*num_seq), buffer+6);
-            printf("[OK] Sequence number is %s\r", num_seq_tot);
+            printf("[OK] Sequence number is %s ...", num_seq_tot);
             ack = 0;
             while(ack == 0){
                 sendto(server_desc_udp2,(const char*)buffer, (num_seq==nb_morceaux)?(size_end):(sizeof(buffer)),MSG_CONFIRM, (const struct sockaddr *) &cliaddr,len);
-                n = recvfrom(server_desc_udp2, (char *)buffer, RCVSIZE,MSG_WAITALL, (struct sockaddr *) &cliaddr,&len); 
-                buffer[n] = '\0';          
-                if(atoi(strtok(buffer,"ACK_")) == num_seq){
-                    ack = 1;
-                    printf("[OK] Received ACK %d/%d\r",num_seq, nb_morceaux);
+                n = recvfrom(server_desc_udp2, (char *)buffer, RCVSIZE, MSG_WAITALL, (struct sockaddr *) &cliaddr,&len); 
+                buffer[n] = '\0';   
+                printf("this is what we received %s, %d\n", buffer, num_seq);
+                if(strstr(buffer, "ACK") != NULL) {
+                    if(atoi(strtok(buffer,"ACK")) == num_seq){
+                        ack = 1;
+                        printf("[OK] Received ACK %d/%d\r",num_seq, nb_morceaux);
+                    }
+                }
+                else{
+                    errors+=1;
                 }
             }
         }
@@ -211,6 +217,7 @@ int main (int argc, char *argv[]) {
         n = recvfrom(server_desc_udp2, (char *)buffer, RCVSIZE,MSG_WAITALL, (struct sockaddr *) &cliaddr,&len); 
         buffer[n] = '\0';
         printf("[OK] Received FINAL ACK\n");
+        printf("there have been %d errors in %d messages\n", errors, nb_morceaux);
     }        
     return 0;
 }
