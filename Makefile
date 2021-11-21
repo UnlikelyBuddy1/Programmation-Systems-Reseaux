@@ -9,7 +9,7 @@ client.o: client.c
 server: server.o
 	gcc server.o -o server
 
-server.o: server.c
+server.o: server.c tools.h
 	gcc -c server.c -o server.o -Wall
 
 clean:
