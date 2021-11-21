@@ -28,20 +28,34 @@ int main (int argc, char *argv[]) {
     server_desc_udp2 = bindSocket(server_desc_udp2, port_udp_data);
     TWH(server_desc_udp, n, buffer_con, port_udp_data, cliaddr, len);
 
-    FILE* fichier;
+    FILE* file;
     struct timeval tv = setTimer(0,10000);
     setsockopt(server_desc_udp2, SOL_SOCKET, SO_RCVTIMEO, &tv,sizeof(tv));
     unsigned short errors=0;
     
     while(1) {
-        fichier = receiveFilename(server_desc_udp2, buffer_data, cliaddr, len, n);
-        size_t length = getLengthFile(fichier);
+        printf("[INFO] Waiting for message being name of file to send ...\n");
+        n = recvfrom(server_desc_udp2, (char *)buffer_data, RCVSIZE, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len); 
+        buffer_data[n] = '\0';
+        char filename[sizeof(buffer_data)];
+        strcpy(filename, buffer_data);+
+
+        printf("[OK] Message is : %s\n", buffer_data);
+        file = NULL;
+        if((file=fopen(filename,"r"))==NULL){
+            printf("[ERR] File %s does not exist\n", filename);
+            exit(-1);
+        } else {
+            printf("[OK] Found file %s\n", filename); 
+        }
+        
+        size_t length = getLengthFile(file);
         char buffer2_lecture[length];
         
-        if((fread(buffer2_lecture,sizeof(char),length,fichier))!=length){
+        if((fread(buffer2_lecture,sizeof(char),length,file))!=length){
             printf("[ERR] Failed to read file\n");
         }
-        fclose(fichier);
+        fclose(file);
         
         unsigned short lastFragSize, *pLastFrag=&lastFragSize;
         unsigned int nFrags = getNumberFragments(length, pLastFrag);

@@ -96,25 +96,6 @@ void TWH(int udpSocket, int n, char buffer[], unsigned short port_udp, struct so
     }
 }
 
-
-FILE *receiveFilename(int udpSocket, char buffer[], struct sockaddr_in cliaddr, socklen_t len, int n){
-    FILE* file;
-    printf("[INFO] Waiting for message being name of file to send ...\n");
-    n = recvfrom(udpSocket, (char *)buffer, RCVSIZE, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len); 
-    buffer[n] = '\0';
-    char filename[strlen(buffer)];
-    strcpy(filename, buffer);
-    printf("[OK] Message is : %s\n", buffer);
-    file = NULL;
-    if((file=fopen(filename,"r"))==NULL){
-        printf("[ERR] File %s does not exist\n", filename);
-        exit(-1);
-    } else {
-        printf("[OK] Found file %s\n", filename); 
-    }
-    return file;
-}
-
 size_t getLengthFile(FILE *file){
     size_t pos = ftell(file);    // Current position
     fseek(file, 0, SEEK_END);    // Go to end
