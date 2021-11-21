@@ -115,6 +115,10 @@ int main (int argc, char *argv[]) {
     printf("[OK] Binded server %d to adress with family %d, port %d, addr %d\n",server_desc_udp2, adresse2.sin_family, adresse2.sin_port,adresse2.sin_addr.s_addr);
     
     FILE* fichier;
+    struct timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = 100000;
+    setsockopt(server_desc_udp2, SOL_SOCKET, SO_RCVTIMEO, &tv,sizeof(tv));
     
     while(1) {
         printf("[INFO] Waiting for message being name of file to send ...\n");
@@ -133,12 +137,13 @@ int main (int argc, char *argv[]) {
         } else {
             printf("[OK] Found file %s\n", filename); 
         }
-          
+        /*  
         char sendBuffer[n];
         strcpy(sendBuffer, fileACK);
         printf("[INFO] Sending %s..\n", fileACK);
         sendto(server_desc_udp2, (char *)sendBuffer, strlen(sendBuffer),MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
-        printf("[OK] Sent %s\n", fileACK);   
+        printf("[OK] Sent %s\n", fileACK);  
+        */ 
         
         if(strcmp(fileACK, "NAC")==0){
             exit(-1);
@@ -159,9 +164,11 @@ int main (int argc, char *argv[]) {
         printf("[INFO] File has a size of %lu bytes\n",length);
 
         int nb_morceaux;
+        unsigned short size_end;
         printf("[INFO] Checking if fragmentation is needed ...\n");
         if((length % (RCVSIZE-6)) != 0){
             nb_morceaux = (length/(RCVSIZE-6))+1;
+            size_end = (length % (RCVSIZE-6));
         } else {
             nb_morceaux = length/(RCVSIZE-6);
         }        
@@ -170,7 +177,8 @@ int main (int argc, char *argv[]) {
         int ack = 0;
         char num_seq_tot[7];
         char num_seq_s[7];
-
+        
+        printf("[INFO] size at the end will be %d\n", size_end);
         printf("[INFO] Buffer size is : %d\n", n);
         buffer[n] = '\0';
 
@@ -187,7 +195,7 @@ int main (int argc, char *argv[]) {
             printf("[OK] Sequence number is %s\r", num_seq_tot);
             ack = 0;
             while(ack == 0){
-                sendto(server_desc_udp2,(const char*)buffer, strlen(buffer),MSG_CONFIRM, (const struct sockaddr *) &cliaddr,len);
+                sendto(server_desc_udp2,(const char*)buffer, (num_seq==nb_morceaux)?(size_end):(sizeof(buffer)),MSG_CONFIRM, (const struct sockaddr *) &cliaddr,len);
                 n = recvfrom(server_desc_udp2, (char *)buffer, RCVSIZE,MSG_WAITALL, (struct sockaddr *) &cliaddr,&len); 
                 buffer[n] = '\0';          
                 if(atoi(strtok(buffer,"ACK_")) == num_seq){
