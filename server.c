@@ -40,10 +40,10 @@ int main (int argc, char *argv[]) {
        
         for(int seqNumber=0;seqNumber <= nFrags;seqNumber++){
             memcpy(buffer_data+6, buffer2_lecture+((RCVSIZE-6)*seqNumber), RCVSIZE-6);
-            printf();
             snprintf((char *) StringSeqNumber, 7 , "%6d", seqNumber );
             memcpy(buffer_data, StringSeqNumber, 6);
             printf("[INFO] Sending file %d/%d ...",seqNumber, nFrags-1);
+            //verifyContents(buffer_data, buffer2_lecture, 0, 20);
             ack = 0;
             while(ack == 0){
                 sendto(udp_data,(const char*)buffer_data, (seqNumber==nFrags)?(lastFragSize):(sizeof(buffer_data)),MSG_CONFIRM, (const struct sockaddr *) &cliaddr,len);

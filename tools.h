@@ -143,3 +143,9 @@ FILE *verifyFile(char buffer[], int size){
         }
     return file;
 }
+
+void verifyContents(char buffer[], char buffer2[], unsigned int start, unsigned int end){
+    for(unsigned int i=start; i<end; i++){
+        printf("content is : src %x     dest %x\n", buffer[i], buffer2[i]);
+    }
+}
