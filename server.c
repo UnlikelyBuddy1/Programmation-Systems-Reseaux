@@ -37,24 +37,13 @@ int main (int argc, char *argv[]) {
         printf("[INFO] Waiting for message being name of file to send ...\n");
         n = recvfrom(server_desc_udp2, (char *)buffer_data, RCVSIZE, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len); 
         buffer_data[n] = '\0';
-        char filename[sizeof(buffer_data)];
-        strcpy(filename, buffer_data);+
-
-        printf("[OK] Message is : %s\n", buffer_data);
-        file = NULL;
-        if((file=fopen(filename,"r"))==NULL){
-            printf("[ERR] File %s does not exist\n", filename);
-            exit(-1);
-        } else {
-            printf("[OK] Found file %s\n", filename); 
-        }
-        
+        file = verifyFile(buffer_data, sizeof(buffer_data));
         size_t length = getLengthFile(file);
         char buffer2_lecture[length];
         
         if((fread(buffer2_lecture,sizeof(char),length,file))!=length){
             printf("[ERR] Failed to read file\n");
-        }
+        } 
         fclose(file);
         
         unsigned short lastFragSize, *pLastFrag=&lastFragSize;

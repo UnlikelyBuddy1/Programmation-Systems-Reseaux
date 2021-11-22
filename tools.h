@@ -123,3 +123,18 @@ unsigned int getNumberFragments(size_t length, unsigned short *pLastFrag){
     printf("[OK] There needs to be %d fragments\n",numberFrags);
     return numberFrags;
 }
+
+FILE *verifyFile(char buffer[], int size){
+    FILE *file;
+    char filename[size];
+        strcpy(filename, buffer);
+        printf("[OK] Message is : %s\n", buffer);
+        file = NULL;
+        if((file=fopen(filename,"r"))==NULL){
+            printf("[ERR] File %s does not exist\n", filename);
+            exit(-1);
+        } else {
+            printf("[OK] Found file %s\n", filename); 
+        }
+    return file;
+}
