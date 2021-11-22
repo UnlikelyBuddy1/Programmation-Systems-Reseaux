@@ -17,20 +17,20 @@ int main (int argc, char *argv[]) {
     memset(&cliaddr, 0, sizeof(cliaddr));
     unsigned short port_udp_con, port_udp_data, lastFragSize, *pLastFrag=&lastFragSize, nFrags, errors=0;
     unsigned short *pport_udp_con= &port_udp_con, *pport_udp_data= &port_udp_data;// les deux port UDP utilise
-    char buffer_con[RCVSIZE], buffer_data[RCVSIZE], num_seq_tot[7], num_seq_s[7]; // le buffer_con ou on va recevoir des donnees et des connexion
-    int server_desc_udp, server_desc_udp2, n=0, ack = 0;
+    char buffer_con[RCVSIZE], buffer_data[RCVSIZE], StringSeqNumber[7]; // le buffer_con ou on va recevoir des donnees et des connexion
+    int udp_con, udp_data, n=0, ack = 0;
     verifyArguments(argc, argv, pport_udp_con, pport_udp_data);
-    server_desc_udp = createSocket();
-    server_desc_udp = bindSocket(server_desc_udp, port_udp_con);
-    server_desc_udp2 = createSocket();
-    server_desc_udp2 = bindSocket(server_desc_udp2, port_udp_data);
-    TWH(server_desc_udp, n, buffer_con, port_udp_data, cliaddr, len);
+    udp_con = createSocket();
+    udp_con = bindSocket(udp_con, port_udp_con);
+    udp_data = createSocket();
+    udp_data = bindSocket(udp_data, port_udp_data);
+    TWH(udp_con, n, buffer_con, port_udp_data, cliaddr, len);
     struct timeval tv = setTimer(0,10000);
-    setsockopt(server_desc_udp2, SOL_SOCKET, SO_RCVTIMEO, &tv,sizeof(tv));
+    setsockopt(udp_data, SOL_SOCKET, SO_RCVTIMEO, &tv,sizeof(tv));
     
     while(1) {
         printf("[INFO] Waiting for message being name of file to send ...\n");
-        n = recvfrom(server_desc_udp2, (char *)buffer_data, RCVSIZE, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len); 
+        n = recvfrom(udp_data, (char *)buffer_data, RCVSIZE, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len); 
         buffer_data[n] = '\0';
         file = verifyFile(buffer_data, sizeof(buffer_data));
         size_t length = getLengthFile(file);
@@ -41,24 +41,20 @@ int main (int argc, char *argv[]) {
         nFrags = getNumberFragments(length, pLastFrag);
         buffer_data[n] = '\0';
 
-        for(int num_seq=0;num_seq < nFrags;num_seq++){
-            memcpy(buffer_data+6, buffer2_lecture+((RCVSIZE-6)*num_seq), RCVSIZE-6);
-            strcpy(num_seq_tot, "000000");
-            snprintf((char *) num_seq_s, 10 , "%d", num_seq );
-            for(int i = strlen(num_seq_s);i>=0;i--){
-                num_seq_tot[strlen(num_seq_tot)-i]=num_seq_s[strlen(num_seq_s)-i];
-            }
-            memcpy(buffer_data,num_seq_tot, 6);
-            printf("[INFO] Sending file %d/%d ...",num_seq, nFrags-1);
+        for(int seqNumber=0;seqNumber < nFrags;seqNumber++){
+            memcpy(buffer_data+6, buffer2_lecture+((RCVSIZE-6)*seqNumber), RCVSIZE-6);
+            snprintf((char *) StringSeqNumber, 7 , "%6d", seqNumber );
+            memcpy(buffer_data, StringSeqNumber, 6);
+            printf("[INFO] Sending file %d/%d ...",seqNumber, nFrags-1);
             ack = 0;
             while(ack == 0){
-                sendto(server_desc_udp2,(const char*)buffer_data, (num_seq==nFrags)?(lastFragSize):(sizeof(buffer_data)),MSG_CONFIRM, (const struct sockaddr *) &cliaddr,len);
-                n = recvfrom(server_desc_udp2, (char *)buffer_data, RCVSIZE, MSG_WAITALL, (struct sockaddr *) &cliaddr,&len); 
+                sendto(udp_data,(const char*)buffer_data, (seqNumber==nFrags)?(lastFragSize):(sizeof(buffer_data)),MSG_CONFIRM, (const struct sockaddr *) &cliaddr,len);
+                n = recvfrom(udp_data, (char *)buffer_data, RCVSIZE, MSG_WAITALL, (struct sockaddr *) &cliaddr,&len); 
                 buffer_data[n] = '\0';   
                 if(strstr(buffer_data, "ACK") != NULL) {
-                    if(atoi(strtok(buffer_data,"ACK")) == num_seq){
+                    if(atoi(strtok(buffer_data,"ACK")) == seqNumber){
                         ack = 1;
-                        printf("[OK] Received ACK %d/%d\r",num_seq, nFrags);
+                        printf("[OK] Received ACK %d/%d\r",seqNumber, nFrags);
                     }
                 }
                 else{
@@ -67,9 +63,9 @@ int main (int argc, char *argv[]) {
             }
         }
         // ToDo windows
-        sendto(server_desc_udp2,"FIN", strlen("FIN"),MSG_CONFIRM, (const struct sockaddr *) &cliaddr,len);
+        sendto(udp_data,"FIN", strlen("FIN"),MSG_CONFIRM, (const struct sockaddr *) &cliaddr,len);
         printf("[INFO] Waiting for message FINAL ACK to end connection ...\n");
-        n = recvfrom(server_desc_udp2, (char *)buffer_data, RCVSIZE,MSG_WAITALL, (struct sockaddr *) &cliaddr,&len); 
+        n = recvfrom(udp_data, (char *)buffer_data, RCVSIZE,MSG_WAITALL, (struct sockaddr *) &cliaddr,&len); 
         buffer_data[n] = '\0';
         printf("[OK] Received FINAL ACK\n");
         printf("there have been %d errors in %d messages\n", errors, nFrags);
