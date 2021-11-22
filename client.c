@@ -8,7 +8,7 @@
 #include <arpa/inet.h>
 #include <time.h>
 
-#define RCVSIZE 508
+#define RCVSIZE 1024
 
 
 int main (int argc, char *argv[]) {

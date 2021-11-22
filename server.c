@@ -34,8 +34,10 @@ int main (int argc, char *argv[]) {
         file = verifyFile(buffer_data, sizeof(buffer_data));
         size_t length = getLengthFile(file);
         char buffer2_lecture[length];
+
         if((fread(buffer2_lecture,sizeof(char),length,file))!=length){printf("[ERR] Failed to read file\n");} 
         fclose(file);
+        
         nFrags = getNumberFragments(length, pLastFrag);
        
         for(int seqNumber=0;seqNumber <= nFrags;seqNumber++){

@@ -8,7 +8,7 @@
 #include <sys/select.h>
 #include <sys/time.h>
 #include <arpa/inet.h>
-#define RCVSIZE 508
+#define RCVSIZE 1024
 #define LOG 1
 
 void pass(){
