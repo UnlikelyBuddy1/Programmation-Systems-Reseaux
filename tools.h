@@ -11,8 +11,8 @@
 #define RCVSIZE 1024
 #define LOG 1
 
-void pass(){
-    return;
+char pass(){
+    return ' ';
 }
 void verifyArguments(int argc, char *argv[], unsigned short *port_udp_con, unsigned short *port_udp_data){
     if(argc > 2){
