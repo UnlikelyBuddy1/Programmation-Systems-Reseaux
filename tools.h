@@ -135,7 +135,7 @@ FILE *verifyFile(char buffer[], int size){
         strcpy(filename, buffer);
         (LOG)?(printf("[OK] Message is : %s\n", buffer)):(pass());
         file = NULL;
-        if((file=fopen(filename,"r"))==NULL){
+        if((file=fopen(filename,"r+"))==NULL){
             printf("[ERR] File %s does not exist\n", filename);
             exit(-1);
         } else {
@@ -146,6 +146,6 @@ FILE *verifyFile(char buffer[], int size){
 
 void verifyContents(char buffer[], char buffer2[], unsigned int start, unsigned int end){
     for(unsigned int i=start; i<end; i++){
-        printf("content is : src %x     dest %x\n", buffer[i], buffer2[i]);
+        printf("content is : src %x dest %x\n", buffer[i], buffer2[i]);
     }
 }
