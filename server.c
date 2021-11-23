@@ -1,13 +1,14 @@
 #include "tools.h"
+#define RTT 100000
 int main (int argc, char *argv[]) {
     FILE* file;
     struct sockaddr_in cliaddr;
     socklen_t len = sizeof(cliaddr);
     memset(&cliaddr, 0, sizeof(cliaddr));
     unsigned short port_udp_con, port_udp_data, lastFragSize, *pLastFrag=&lastFragSize, nFrags, errors=0, toSend=0;
-    unsigned short *pport_udp_con= &port_udp_con, *pport_udp_data= &port_udp_data;// les deux port UDP utilise
+    unsigned short *pport_udp_con= &port_udp_con, *pport_udp_data= &port_udp_data, ack = 0;// les deux port UDP utilise
     char buffer_con[RCVSIZE], buffer_data[RCVSIZE], buffer_ack[10],buffer_file[RCVSIZE-6]; // le buffer_con ou on va recevoir des donnees et des connexion
-    int udp_con, udp_data, n=0, ack = 0;
+    int udp_con, udp_data, n=0;
     verifyArguments(argc, argv, pport_udp_con, pport_udp_data);
     udp_con = createSocket();
     udp_con = bindSocket(udp_con, port_udp_con);
