@@ -35,7 +35,8 @@ int main (int argc, char *argv[]) {
                 if(strstr(buffer_ack, "ACK") != NULL) {
                     if(atoi(strtok(buffer_ack,"ACK")) == seqNumber){
                         ack = 1;
-                        printf("[OK] Received ACK %d/%d\r",seqNumber, nFrags);}
+                        //printf("[OK] Received ACK %d/%d\r",seqNumber, nFrags);
+                    }
                 }else{
                     errors+=1;}}
             memset(buffer_data, 0, RCVSIZE);
@@ -49,7 +50,7 @@ int main (int argc, char *argv[]) {
             printf("[OK] Received FINAL ACK\n");
             memset(buffer_ack, 0, sizeof(buffer_ack));}
         fclose(file);
-        printf("there have been %d errors in %d messages\n", errors, nFrags);
+        printf("[INFO] There have been %d errors in %d messages\n", errors, nFrags);
     } 
     return 0;
 }
