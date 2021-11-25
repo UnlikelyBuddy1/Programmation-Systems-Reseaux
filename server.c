@@ -35,7 +35,6 @@ int main (int argc, char *argv[]) {
                 if(strstr(buffer_ack, "ACK") != NULL) {
                     if(atoi(strtok(buffer_ack,"ACK")) == seqNumber){
                         ack = 1;
-                        //printf("[OK] Received ACK %d/%d\r",seqNumber, nFrags);
                     }
                 }else{
                     errors+=1;}}
