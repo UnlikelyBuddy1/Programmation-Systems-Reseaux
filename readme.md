@@ -1,4 +1,4 @@
-# Networks and Systems Programation COM SUCKET
+# Networks and Systems Programation COM SUCKET USE WITH CLIENT 1 !!!!!!!
 ## Features we may want :
 - Nagle or Clark algorithm to help with flow control
 - Congestion control

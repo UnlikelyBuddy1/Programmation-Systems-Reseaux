@@ -4,3 +4,8 @@
 *.o
 *.png
 *.jpg
+*.pdf
+*.txt
+*.json
+*.jpeg
+test.c
