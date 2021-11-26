@@ -9,7 +9,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <arpa/inet.h>
-#define RCVSIZE 1024
+#define RCVSIZE 1460
 #define LOG 1
 
 char pass(){
