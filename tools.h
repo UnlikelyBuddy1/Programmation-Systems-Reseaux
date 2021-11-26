@@ -7,6 +7,7 @@
 #include <netinet/in.h>
 #include <sys/select.h>
 #include <sys/time.h>
+#include <time.h>
 #include <arpa/inet.h>
 #define RCVSIZE 1024
 #define LOG 1
@@ -60,7 +61,9 @@ int bindSocket(int udpSocket, unsigned short port_udp){
     return udpSocket;
 }
 
-void TWH(int udpSocket, int n, char buffer[], unsigned short port_udp, struct sockaddr_in cliaddr, socklen_t len){
+unsigned int TWH(int udpSocket, int n, char buffer[], unsigned short port_udp, struct sockaddr_in cliaddr, socklen_t len){
+    clock_t before;
+    unsigned int micro_seconds;
     (LOG)?(printf("[INFO] Begining three way handshake waiting to receive SYN(blocking)\n")):(pass());
     n = recvfrom(udpSocket, (char *)buffer, RCVSIZE,MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len);
     buffer[n] = '\0';
@@ -81,8 +84,11 @@ void TWH(int udpSocket, int n, char buffer[], unsigned short port_udp, struct so
         // En multi client il faut creer le thread avant de envoyer le synack
         // faire lecture fichier -> envoi -> réecriture
         sendto(udpSocket, (char *)buffer, strlen(buffer),MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
+        before = clock();
         (LOG)?(printf("[INFO] Waiting for ACK ...\n")):(pass());
         n = recvfrom(udpSocket, (char *)buffer, RCVSIZE,MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len);
+        clock_t difference= clock()-before;
+        micro_seconds= ((difference*1000000)/CLOCKS_PER_SEC);
         buffer[n] = '\0';
         (LOG)?(printf("[INFO] The buffer_con is :\n")):(pass());
         (LOG)?(printf("[DATA] %s\n", buffer)):(pass());
@@ -98,6 +104,7 @@ void TWH(int udpSocket, int n, char buffer[], unsigned short port_udp, struct so
         printf("[ERR] Bad SYN");
         exit(0);
     }
+    return micro_seconds;
 }
 
 size_t getLengthFile(FILE *file){
