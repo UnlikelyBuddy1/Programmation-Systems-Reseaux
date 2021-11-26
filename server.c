@@ -1,6 +1,7 @@
 #include "tools.h"
 int main (int argc, char *argv[]) {
     FILE* file;
+    FILE* logs = fopen("log.txt", "w");
     struct sockaddr_in cliaddr;
     socklen_t len = sizeof(cliaddr);
     memset(&cliaddr, 0, sizeof(cliaddr));
@@ -52,7 +53,15 @@ int main (int argc, char *argv[]) {
         while (micro_sec< RTT && windowPos != seqNumber);
         if(windowPos!=seqNumber){
             errors+=1;
+            window=(unsigned short)((window/2)+1);
+            
         }
+        else{
+            if(window<10){
+                window+=1;
+            }
+        }
+        fprintf(logs, "%d\n", window);
         memset(buffer_data, 0, RCVSIZE);
         memset(buffer_ack, 0, sizeof(buffer_ack));
     }
