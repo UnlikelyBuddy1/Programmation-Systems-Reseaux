@@ -1,7 +1,7 @@
 #include "tools.h"
 int main (int argc, char *argv[]) {
     FILE* file;
-    //FILE* logs = fopen("log.txt", "w");
+    FILE* logs = fopen("log.txt", "w");
     struct sockaddr_in cliaddr;
     socklen_t len = sizeof(cliaddr);
     memset(&cliaddr, 0, sizeof(cliaddr));
@@ -70,7 +70,7 @@ int main (int argc, char *argv[]) {
                 window+=1;
             }
         }
-        //fprintf(logs, "%d\n", window);
+        (LOG) ? fprintf(logs, "%d\n", window) : (pass());
         memset(buffer_data, 0, RCVSIZE);
         memset(buffer_ack, 0, sizeof(buffer_ack));
     }
@@ -80,7 +80,7 @@ int main (int argc, char *argv[]) {
     long seconds = end.tv_sec - begin.tv_sec;
     long nanoseconds = end.tv_nsec - begin.tv_nsec;
     double elapsed = seconds + nanoseconds*1e-9;
-    printf("Time measured: %.3f seconds.\n", elapsed);
+    printf("[INFO] Time measured: %.3f seconds.\n", elapsed);
 
     fclose(file);
     printf("[INFO] There have been %d errors in %d messages\n", errors, nFrags);
