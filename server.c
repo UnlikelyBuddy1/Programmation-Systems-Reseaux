@@ -3,12 +3,11 @@
 #include <time.h>
 #define RTT 100000
 int main(int argc, char *argv[])
-{   struct timespec start, end;
+{
+    struct timespec start, end;
     float RTT_list[100];
     float SRTT_list[100];
     int index = 0;
-
-
 
     FILE *file;
     struct sockaddr_in cliaddr;
@@ -51,13 +50,10 @@ int main(int argc, char *argv[])
                 clock_gettime(CLOCK_REALTIME, &end);
                 time_converter(start, end, index, RTT_list);
                 SRTT_list[index] = RTT_ESTIMATION(0.2, SRTT_0, RTT_list[index]);
-                diff = SRTT_list[index] - RTT_list[index]; 
-                printf("RTT (%9.6f) vs SRTT (%9.6f) and the difference is : (%9.6f)\n",RTT_list[index], SRTT_list[index], diff);
+                diff = SRTT_list[index] - RTT_list[index];
+                printf("RTT (%9.6f) vs SRTT (%9.6f) and the difference is : (%9.6f) ms \n", RTT_list[index], SRTT_list[index], diff);
                 SRTT_0 = SRTT_list[index];
-
                 //printf("The RTT value of this instance of exchange is : %9.6f\n", RTT_list[index]);
-
-
 
                 if (strstr(buffer_ack, "ACK") != NULL)
                 {
