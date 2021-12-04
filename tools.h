@@ -9,10 +9,15 @@
 #include <sys/time.h>
 #include <time.h>
 #include <arpa/inet.h>
-#define RCVSIZE 1460
+#define MTU 1024
 #define LOG 0
 
 
+
+unsigned long RTT_ESTIMATION(float alpha, unsigned short SRTT, unsigned long RTT)
+{ 
+    return SRTT = alpha*(SRTT)+(1-alpha)*RTT;
+}
 char pass(){
     return ' ';
 }
@@ -62,14 +67,13 @@ int bindSocket(int udpSocket, unsigned short port_udp){
     return udpSocket;
 }
 
-unsigned int TWH(int udpSocket, int n, char buffer[], unsigned short port_udp, struct sockaddr_in cliaddr, socklen_t len){
-    clock_t before;
-    unsigned int micro_seconds;
+unsigned long TWH(int udpSocket, int n, char buffer[], unsigned short port_udp, struct sockaddr_in cliaddr, socklen_t len){
+    struct timespec begin, end; 
+
     (LOG)?(printf("[INFO] Begining three way handshake waiting to receive SYN(blocking)\n")):(pass());
-    n = recvfrom(udpSocket, (char *)buffer, RCVSIZE,MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len);
+    n = recvfrom(udpSocket, (char *)buffer, MTU,MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len);
     buffer[n] = '\0';
     (LOG)?(printf("[OK] buffer_con to receive created %d\n", n)):(pass());
-    
     if(strcmp(buffer,"SYN")==0){
         (LOG)?(printf("[INFO] The buffer_con is :\n")):(pass());
         (LOG)?(printf("[DATA] %s\n", buffer)):(pass());
@@ -84,12 +88,11 @@ unsigned int TWH(int udpSocket, int n, char buffer[], unsigned short port_udp, s
         (LOG)?(printf("[DATA] %s\n", buffer)):(pass());
         // En multi client il faut creer le thread avant de envoyer le synack
         // faire lecture fichier -> envoi -> réecriture
+        clock_gettime(CLOCK_REALTIME, &begin);
         sendto(udpSocket, (char *)buffer, strlen(buffer),MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
-        before = clock();
         (LOG)?(printf("[INFO] Waiting for ACK ...\n")):(pass());
-        n = recvfrom(udpSocket, (char *)buffer, RCVSIZE,MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len);
-        clock_t difference= clock()-before;
-        micro_seconds= ((difference*1000000)/CLOCKS_PER_SEC);
+        n = recvfrom(udpSocket, (char *)buffer, MTU,MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len);
+        clock_gettime(CLOCK_REALTIME, &end);
         buffer[n] = '\0';
         (LOG)?(printf("[INFO] The buffer_con is :\n")):(pass());
         (LOG)?(printf("[DATA] %s\n", buffer)):(pass());
@@ -105,7 +108,9 @@ unsigned int TWH(int udpSocket, int n, char buffer[], unsigned short port_udp, s
         printf("[ERR] Bad SYN");
         exit(0);
     }
-    return micro_seconds;
+    unsigned long microseconds = ((end.tv_sec*1e6) + (end.tv_nsec/1e3)) - ((begin.tv_sec*1e6) + (begin.tv_nsec/1e3));
+    printf("[INFO] Time measured: %ld µs.\n", microseconds);
+    return microseconds;
 }
 
 size_t getLengthFile(FILE *file){
@@ -126,11 +131,11 @@ struct timeval setTimer(unsigned int seconds, unsigned int micro_seconds){
 
 unsigned short getNumberFragments(size_t length, unsigned short *pLastFrag){
     unsigned short numberFrags;
-    if((length % (RCVSIZE-6)) != 0){
-        numberFrags = (length/(RCVSIZE-6))+1;
-        *pLastFrag = (length % (RCVSIZE-6));
+    if((length % (MTU-6)) != 0){
+        numberFrags = (length/(MTU-6))+1;
+        *pLastFrag = (length % (MTU-6));
     } else {
-        numberFrags = length/(RCVSIZE-6);
+        numberFrags = length/(MTU-6);
     }        
     (LOG)?(printf("[OK] There needs to be %d fragments\n",numberFrags)):(pass());
     (LOG)?(printf("[INFO] size at the end will be %d\n", *pLastFrag)):(pass());
