@@ -15,18 +15,20 @@ char pass()
 {
     return ' ';
 }
-float RTT_ESTIMATION(double alpha, double SRTT_value, double RTT_value)
+double ligne_C1(double alpha, double x, double y) // avec cette fonction, on calculera la RTT et le timeout
 {
-    return alpha * SRTT_value + (1 - alpha) * RTT_value;
+    return (1 - alpha) * x + alpha * y ;
 }
+double Timeout(double beta, double diff, double RTT_,double sRTT_){
+    return sRTT_ + 4*ligne_C1(beta, diff, abs(RTT_ - sRTT_));
+}                   
 
-void time_converter(struct timespec start, struct timespec end, int index, double RTT_list[])
+double time_converter(struct timespec start, struct timespec end)
 {
+    
     double sec_to_mu = (double)((end.tv_sec - start.tv_sec) * 1000000);
     double nano_to_mu = (double)((end.tv_nsec - start.tv_nsec) / (1000));
-    RTT_list[index] = sec_to_mu + nano_to_mu;
-    
-   
+    return sec_to_mu + nano_to_mu;
 }
 void verifyArguments(int argc, char *argv[], unsigned short *port_udp_con, unsigned short *port_udp_data)
 {

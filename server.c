@@ -4,10 +4,14 @@
 #define RTT 100000
 int main(int argc, char *argv[])
 {
+    FILE *logs;
     struct timespec start, end;
-    double RTT_list[100];
-    double SRTT_list[100];
+    double RTT_;
+    double sRTT_ = 4;
+    double diff = 0;
     int index = 0;
+    int i = 0;
+    double Timeout = 0;
 
     FILE *file;
     struct sockaddr_in cliaddr;
@@ -25,9 +29,12 @@ int main(int argc, char *argv[])
     TWH(udp_con, n, buffer_con, port_udp_data, cliaddr, len);
     struct timeval tv = setTimer(0, 10000);
     setsockopt(udp_data, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+
+    logs = fopen("f.log", "a+");
+    fprintf(logs, "# Index         RTT         SRTT         Diff         Timeout\n");
     while (1)
     {
-        printf("[INFO] Waiting for message being name of file to send ...\n"); //verifyContents(buffer_data, buffer_file, 0, 20);
+        printf("[INFO] Waiting for the name of file to be sent ...\n"); //verifyContents(buffer_data, buffer_file, 0, 20);
         n = recvfrom(udp_data, (char *)buffer_data, RCVSIZE, MSG_WAITALL, (struct sockaddr *)&cliaddr, &len);
         file = verifyFile(buffer_data, sizeof(buffer_data));
         size_t length = getLengthFile(file);
@@ -39,8 +46,7 @@ int main(int argc, char *argv[])
             memcpy(buffer_data + 6, buffer_file, sizeof(buffer_file));
             printf("[INFO] Sending file %d/%d ...\r", seqNumber, nFrags);
             ack = 0;
-            double SRTT_0 = 4;
-            double diff = 0;
+            i += 1;
             while (ack == 0)
             {
                 sendto(udp_data, (const char *)buffer_data, toSend + 6, MSG_CONFIRM, (const struct sockaddr *)&cliaddr, len);
@@ -48,16 +54,20 @@ int main(int argc, char *argv[])
 
                 n = recvfrom(udp_data, (char *)buffer_ack, sizeof(buffer_ack), MSG_WAITALL, (struct sockaddr *)&cliaddr, &len);
                 clock_gettime(CLOCK_REALTIME, &end);
-                time_converter(start, end, index, RTT_list);
-                SRTT_list[index] = RTT_ESTIMATION(0.2, SRTT_0, RTT_list[index]);
-                diff = SRTT_list[index] - RTT_list[index];
+                RTT_ = time_converter(start, end);
                 
+                sRTT_ = ligne_C1(0.125, sRTT_, RTT_);
+                diff = ligne_C1(0.25, diff, abs(RTT_ - sRTT_));
+                Timeout = sRTT_ + 4 * diff; //4*diff est un coeff de sécurité.
+
                 //casting variables for printf
-                float RTT_f= (float) RTT_list[index];
-                float SRTT_f= (float) SRTT_list[index];
-                float diff_f= (float) diff;
-                printf("RTT (%9.6f µs) vs SRTT (%9.6f µs) and the difference is : (%9.6f) µs \n", RTT_f, SRTT_f, diff_f);
-                SRTT_0 = SRTT_list[index];
+                float RTT_f = (float)RTT_;
+                float sRTT_f = (float)sRTT_;
+                float diff_f = (float)diff;
+                float Timeout_f = (float)Timeout;
+
+                fprintf(logs, "   %d            %9.4f    %9.4f    %9.4f    %9.4f\n", i, RTT_f, sRTT_f, diff_f, Timeout_f);
+
                 //printf("The RTT value of this instance of exchange is : %9.6f\n", RTT_list[index]);
 
                 if (strstr(buffer_ack, "ACK") != NULL)
@@ -77,7 +87,7 @@ int main(int argc, char *argv[])
         }
         printf("\n");
         sendto(udp_data, "FIN", strlen("FIN"), MSG_CONFIRM, (const struct sockaddr *)&cliaddr, len);
-        printf("[INFO] Waiting for message FINAL ACK to end connection ...\n");
+        printf("[INFO] Waiting for the FINAL ACK to end connection ...\n");
         n = recvfrom(udp_data, (char *)buffer_ack, RCVSIZE, MSG_WAITALL, (struct sockaddr *)&cliaddr, &len);
         if (strstr(buffer_ack, "ACK") != NULL)
         {
