@@ -5,8 +5,8 @@
 int main(int argc, char *argv[])
 {
     struct timespec start, end;
-    float RTT_list[100];
-    float SRTT_list[100];
+    double RTT_list[100];
+    double SRTT_list[100];
     int index = 0;
 
     FILE *file;
@@ -39,8 +39,8 @@ int main(int argc, char *argv[])
             memcpy(buffer_data + 6, buffer_file, sizeof(buffer_file));
             printf("[INFO] Sending file %d/%d ...\r", seqNumber, nFrags);
             ack = 0;
-            float SRTT_0 = 4;
-            float diff = 0;
+            double SRTT_0 = 4;
+            double diff = 0;
             while (ack == 0)
             {
                 sendto(udp_data, (const char *)buffer_data, toSend + 6, MSG_CONFIRM, (const struct sockaddr *)&cliaddr, len);
@@ -51,7 +51,12 @@ int main(int argc, char *argv[])
                 time_converter(start, end, index, RTT_list);
                 SRTT_list[index] = RTT_ESTIMATION(0.2, SRTT_0, RTT_list[index]);
                 diff = SRTT_list[index] - RTT_list[index];
-                printf("RTT (%9.6f) vs SRTT (%9.6f) and the difference is : (%9.6f) ms \n", RTT_list[index], SRTT_list[index], diff);
+                
+                //casting variables for printf
+                float RTT_f= (float) RTT_list[index];
+                float SRTT_f= (float) SRTT_list[index];
+                float diff_f= (float) diff;
+                printf("RTT (%9.6f µs) vs SRTT (%9.6f µs) and the difference is : (%9.6f) µs \n", RTT_f, SRTT_f, diff_f);
                 SRTT_0 = SRTT_list[index];
                 //printf("The RTT value of this instance of exchange is : %9.6f\n", RTT_list[index]);
 

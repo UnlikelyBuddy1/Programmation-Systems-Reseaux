@@ -15,16 +15,16 @@ char pass()
 {
     return ' ';
 }
-float RTT_ESTIMATION(float alpha, float SRTT_value, float RTT_value)
+float RTT_ESTIMATION(double alpha, double SRTT_value, double RTT_value)
 {
     return alpha * SRTT_value + (1 - alpha) * RTT_value;
 }
 
-void time_converter(struct timespec start, struct timespec end, int index, float RTT_list[])
+void time_converter(struct timespec start, struct timespec end, int index, double RTT_list[])
 {
-    float sec_to_milli = (float)((end.tv_sec - start.tv_sec) * 1000);
-    float nano_to_milli = (float)((end.tv_nsec - start.tv_nsec) / (1000000));
-    RTT_list[index] = sec_to_milli + nano_to_milli;
+    double sec_to_mu = (double)((end.tv_sec - start.tv_sec) * 1000000);
+    double nano_to_mu = (double)((end.tv_nsec - start.tv_nsec) / (1000));
+    RTT_list[index] = sec_to_mu + nano_to_mu;
     
    
 }
