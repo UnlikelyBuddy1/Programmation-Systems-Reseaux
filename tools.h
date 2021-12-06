@@ -10,7 +10,7 @@
 #include <time.h>
 #include <arpa/inet.h>
 #define MTU 1024
-#define LOG 1
+#define LOG 0
 
 
 
@@ -79,6 +79,7 @@ unsigned long TWH(int udpSocket, int n, char buffer[], unsigned short port_udp, 
         (LOG)?(printf("[DATA] %s\n", buffer)):(pass());
         char synack[11];
         char port_udp_data_s[6];
+        clock_gettime(CLOCK_REALTIME, &begin);
         strcpy(synack, "SYN-ACK");
         snprintf((char *) port_udp_data_s, 10 , "%d", port_udp ); 
         strcat(synack,port_udp_data_s);
@@ -88,16 +89,15 @@ unsigned long TWH(int udpSocket, int n, char buffer[], unsigned short port_udp, 
         (LOG)?(printf("[DATA] %s\n", buffer)):(pass());
         // En multi client il faut creer le thread avant de envoyer le synack
         // faire lecture fichier -> envoi -> réecriture
-        clock_gettime(CLOCK_REALTIME, &begin);
         sendto(udpSocket, (char *)buffer, strlen(buffer),MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
         (LOG)?(printf("[INFO] Waiting for ACK ...\n")):(pass());
         n = recvfrom(udpSocket, (char *)buffer, MTU,MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len);
-        clock_gettime(CLOCK_REALTIME, &end);
         buffer[n] = '\0';
         (LOG)?(printf("[INFO] The buffer_con is :\n")):(pass());
         (LOG)?(printf("[DATA] %s\n", buffer)):(pass());
         if(strcmp(buffer,"ACK")==0){
             (LOG)?(printf("[OK] ACK received, succesful connection\n")):(pass());
+            clock_gettime(CLOCK_REALTIME, &end);
         // Handshake reussi !
 
         }else{
