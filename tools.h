@@ -10,7 +10,7 @@
 #include <time.h>
 #include <arpa/inet.h>
 #define MTU 1024
-#define LOG 0
+#define LOG 1
 
 
 
@@ -118,7 +118,7 @@ size_t getLengthFile(FILE *file){
     fseek(file, 0, SEEK_END);    // Go to end
     size_t length = ftell(file); // read the position which is the size
     fseek(file, pos, SEEK_SET);
-    (LOG)?(printf("[INFO] File has a size of %lu bytes\n",length)):(pass());
+    printf("[INFO] File has a size of %lu bytes\n",length);
     return length;
 }
 
@@ -129,15 +129,15 @@ struct timeval setTimer(unsigned int seconds, unsigned int micro_seconds){
     return tv;
 }
 
-unsigned short getNumberFragments(size_t length, unsigned short *pLastFrag){
-    unsigned short numberFrags;
+unsigned long getNumberFragments(size_t length, unsigned short *pLastFrag){
+    unsigned long numberFrags;
     if((length % (MTU-6)) != 0){
         numberFrags = (length/(MTU-6))+1;
         *pLastFrag = (length % (MTU-6));
     } else {
         numberFrags = length/(MTU-6);
     }        
-    (LOG)?(printf("[OK] There needs to be %d fragments\n",numberFrags)):(pass());
+    (LOG)?(printf("[OK] There needs to be %lu fragments\n",numberFrags)):(pass());
     (LOG)?(printf("[INFO] size at the end will be %d\n", *pLastFrag)):(pass());
     return numberFrags;
 }
