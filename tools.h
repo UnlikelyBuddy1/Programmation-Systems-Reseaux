@@ -12,8 +12,6 @@
 #define MTU 1024
 #define LOG 0
 
-
-
 unsigned long RTT_ESTIMATION(float alpha, unsigned short SRTT, unsigned long RTT)
 { 
     return SRTT = alpha*(SRTT)+(1-alpha)*RTT;
