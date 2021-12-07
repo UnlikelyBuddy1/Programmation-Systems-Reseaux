@@ -4,16 +4,17 @@ int main (int argc, char *argv[]) {
     struct sockaddr_in cliaddr;
     socklen_t len = sizeof(cliaddr);
     memset(&cliaddr, 0, sizeof(cliaddr));
+
     unsigned short port_udp_con, port_udp_data, lastFragSize, *pLastFrag=&lastFragSize, toSend=0;
     unsigned short *pport_udp_con= &port_udp_con, *pport_udp_data= &port_udp_data;
     char buffer_con[MTU], buffer_data[MTU], buffer_ack[10],buffer_file[MTU-6];
     int udp_con, udp_data, n=0;
 
-    unsigned int micro_sec;
-    struct timespec begin, end, waitACK, endACK;
+    unsigned char retransmit=0, timeout=0;
+    unsigned short cwnd= 8, duplicateACK = 0, duplicateTrigger = 2, RTT, RTO, SRTT;
+    unsigned long seqNum=1, ACKnum=0, errors=0, retransmits = 0, nFrags, ACK;
 
-    unsigned short cwnd= 10, duplicateACK = 0, retransmit=0, duplicateTrigger = 2;
-    unsigned long seqNum=1, ACKnum=0, lastACK=0, RTT, RTO, SRTT, errors=0, retransmits = 0, nFrags, ACK;
+    struct timespec begin, end;
 
     verifyArguments(argc, argv, pport_udp_con, pport_udp_data);
     udp_con = createSocket();
@@ -21,21 +22,27 @@ int main (int argc, char *argv[]) {
     udp_data = createSocket();
     udp_data = bindSocket(udp_data, port_udp_data);
     RTT=(TWH(udp_con, n, buffer_con, port_udp_data, cliaddr, len));
-    printf("[INFO] RTT is %lu µs\n", RTT);
-    RTO = 6125;
-    struct timeval tv = setTimer(0,RTO);
+    printf("[INFO] RTT is %u µs\n", RTT);
+    RTO = 50000;
 
     printf("[INFO] Waiting for message being name of file to send ...\n");
     n = recvfrom(udp_data, (char *)buffer_data, MTU, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len);
-    setsockopt(udp_data, SOL_SOCKET, SO_RCVTIMEO, &tv,sizeof(tv));    
     file = verifyFile(buffer_data, sizeof(buffer_data));
     size_t length = getLengthFile(file);
     nFrags = getNumberFragments(length, pLastFrag);
     clock_gettime(CLOCK_REALTIME, &begin);
     fseek(file, 0, SEEK_SET);
-    memset(&waitACK, 0, sizeof(waitACK));
-    clock_gettime(CLOCK_REALTIME, &waitACK);
-    setsockopt(udp_data, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv));
+
+    struct timeval tv;
+    tv.tv_sec=0;
+    tv.tv_usec=RTO;
+
+    fd_set socket;
+    int retval;
+    FD_ZERO(&socket);
+    FD_SET(udp_data, &socket);
+
+    signed long ACK_TIMERS[nFrags];
 
     while(ACKnum<nFrags){
         do {
@@ -47,9 +54,10 @@ int main (int argc, char *argv[]) {
                 (LOG) ? pass(): printf("[INFO] Sending file %lu/%lu ...\r", ACKnum+1, nFrags);
                 sendto(udp_data,(const char*)buffer_data, toSend+6, MSG_CONFIRM, (const struct sockaddr *) &cliaddr,len);
                 retransmit=0;
+                ACK_TIMERS[ACKnum]=RTO;
                 (LOG) ? printf("[RETRANSMIT] ACKnum: %lu\tduplicateACK: %u\tseqNum: %lu\n", ACKnum, duplicateACK, seqNum): pass();
             } else {
-                (LOG) ? printf("[SENDING] %ld < %u\t:", (seqNum-(ACKnum+1)), cwnd): pass();
+                (LOG) ? printf("[SENDING] %ld < %u\t: ", (seqNum-(ACKnum+1)), cwnd): pass();
                 while((seqNum-(ACKnum+1))<cwnd){
                     if(seqNum <= nFrags){
                         fseek(file, (seqNum-1)*(MTU-6), SEEK_SET);
@@ -58,7 +66,8 @@ int main (int argc, char *argv[]) {
                         memcpy(buffer_data+6, buffer_file, sizeof(buffer_file));
                         (LOG) ? pass(): printf("[INFO] Sending file %lu/%lu ...\r", seqNum, nFrags);
                         sendto(udp_data,(const char*)buffer_data, toSend+6, MSG_CONFIRM, (const struct sockaddr *) &cliaddr,len);
-                        (LOG) ? printf(" %lu \t", seqNum): pass();
+                        (LOG) ? printf("%lu, ", seqNum): pass();
+                        ACK_TIMERS[seqNum]=RTO;
                         seqNum++;
                     } else {
                         break;
@@ -67,9 +76,11 @@ int main (int argc, char *argv[]) {
                 (LOG) ? printf("\n"): pass();
             }
             
-            n = recvfrom(udp_data, (char *)buffer_ack, sizeof(buffer_ack), MSG_PEEK, (struct sockaddr *) &cliaddr,&len); 
-            if(n>=9){
-                n = recvfrom(udp_data, (char *)buffer_ack, sizeof(buffer_ack)-1, MSG_DONTWAIT, (struct sockaddr *) &cliaddr,&len);
+            retval = select(10, &socket, NULL, NULL, &tv);
+            if(retval==0){
+            } else {
+                n = recvfrom(udp_data, (char *)buffer_ack, sizeof(buffer_ack)-1, MSG_WAITALL, (struct sockaddr *) &cliaddr,&len);
+                if(n>=9){
                 buffer_ack[10]='\0';
                 if(strstr(buffer_ack, "ACK") != NULL) {
                     ACK=atoi(strtok(buffer_ack,"ACK"));
@@ -85,30 +96,43 @@ int main (int argc, char *argv[]) {
                     if(ACKnum+1>seqNum){
                         seqNum = ACKnum+1;
                     }
-                    clock_gettime(CLOCK_REALTIME, &waitACK);
                 }
                 memset(buffer_ack, 0, sizeof(buffer_ack));
-                //(LOG) ? printf("[RCV ACK] ACKnum: %lu\tduplicateACK: %u\tlastACK: %lu\tcwnd: %u\tseqNum: %lu\n", ACKnum, duplicateACK, lastACK, cwnd, seqNum): pass();
-                (LOG) ? printf("[TIMER] time is %u µs/%lu µs\n", micro_sec, RTO): pass();
             }
-            clock_gettime(CLOCK_REALTIME, &endACK);
-
-            micro_sec= ((endACK.tv_sec*1e6) + (endACK.tv_nsec/1e3)) - ((waitACK.tv_sec*1e6) + (waitACK.tv_nsec/1e3));
+            }
+            FD_ZERO(&socket);
+            FD_SET(udp_data, &socket);
+            
+            //printf("indexes are : ");
+            for(unsigned short i=seqNum-cwnd; i<seqNum; i++){
+                if(i>=ACKnum){
+                    ACK_TIMERS[i]=(tv.tv_sec*1e6+tv.tv_usec);
+                } 
+                //printf("{%u :%ld} ", i, ACK_TIMERS[i]);
+                if(ACK_TIMERS[i]<=0){
+                    //printf("[TIMEOUT] %ld \n", ACK_TIMERS[i]);
+                    timeout=1;
+                }
+            }
+            //printf("\n");
+            tv.tv_usec=RTO;
+            tv.tv_sec=0;
         } 
-        while(micro_sec< RTO && (duplicateACK%(cwnd-duplicateTrigger)) && duplicateACK!=duplicateTrigger && seqNum<=nFrags);
+        while(timeout==0 && (duplicateACK%(cwnd-duplicateTrigger)) && duplicateACK!=duplicateTrigger && seqNum<=nFrags);
         if(duplicateACK%(cwnd-duplicateTrigger) || duplicateACK==duplicateTrigger){
             retransmits++;
             retransmit=1;
         } 
-        if(micro_sec> RTO){
-            (LOG) ? printf("[TIMEOUT] time is %u µs/%lu µs\n", micro_sec, RTO): pass();
+        if(timeout!=0){
+            (LOG) ? printf("[TIMEOUT]\n"): pass();
             errors++;
             retransmit=0;
             seqNum=ACKnum+1;
+            timeout=0;
         }  
         memset(buffer_data, 0, MTU);
         memset(buffer_ack, 0, sizeof(buffer_ack));
-        (LOG) ? printf("[INFO] ACKnum is %lu and nFrags is %lu\n", ACKnum, nFrags): pass();
+        //(LOG) ? printf("[INFO] ACKnum is %lu and nFrags is %lu\n", ACKnum, nFrags): pass();
     }
     sendto(udp_data,"FIN", strlen("FIN"),MSG_CONFIRM, (const struct sockaddr *) &cliaddr,len);
     clock_gettime(CLOCK_REALTIME, &end);

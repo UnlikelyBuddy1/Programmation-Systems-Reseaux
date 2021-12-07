@@ -20,6 +20,7 @@ double give_time(void);
 void envoyer(int no_seq, int no_bytes, char* buffer_input, char* buffer_output, int server_socket, struct sockaddr_in* client_addr, socklen_t length);
 int wait_ack(int no_seq, int no_bytes, char* buffer_input, char* buffer_output, int server_socket, struct sockaddr_in* client_addr, socklen_t* length, int* previous,int* nb_same);
 void *thread_clock(void* arguments);
+FILE *verifyFile(char buffer[], int size);
 
 
 struct arg_struct {
@@ -153,6 +154,7 @@ int main (int argc, char *argv[]) {
         printf("Something's wrong I can feel it (file)\n");
         exit(1);
     }
+    fichier = verifyFile(buffer, sizeof(buffer));
     int small_size;
     size_t pos = ftell(fichier);    // Current position
     fseek(fichier, 0, SEEK_END);    // Go to end
@@ -460,4 +462,19 @@ void *thread_clock(void* arguments) {
         
     }
 	pthread_exit(EXIT_SUCCESS);
+}
+
+FILE *verifyFile(char buffer[], int size){
+    FILE *file;
+    char filename[size];
+        strcpy(filename, buffer);
+        printf("[OK] Message is : %s\n", buffer);
+        file = NULL;
+        if((file=fopen(filename,"r+"))==NULL){
+            printf("[ERR] File %s does not exist\n", filename);
+            exit(-1);
+        } else {
+            printf("[OK] Found file %s\n", filename);
+        }
+    return file;
 }

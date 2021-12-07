@@ -9,7 +9,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <arpa/inet.h>
-#define MTU 1024
+#define MTU 1018
 #define LOG 0
 
 unsigned long RTT_ESTIMATION(float alpha, unsigned short SRTT, unsigned long RTT)
