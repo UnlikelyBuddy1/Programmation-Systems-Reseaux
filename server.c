@@ -11,8 +11,8 @@ int main (int argc, char *argv[]) {
     int udp_con, udp_data, n=0;
 
     unsigned char retransmit=0, timeout=0;
-    unsigned short cwnd= 8, duplicateACK = 0, duplicateTrigger = 2, RTT, RTO, SRTT;
-    unsigned long seqNum=1, ACKnum=0, errors=0, retransmits = 0, nFrags, ACK;
+    unsigned short cwnd= 8, duplicateACK = 0, duplicateTrigger = 2;
+    unsigned long seqNum=1, ACKnum=0, errors=0, retransmits = 0, nFrags, ACK, RTT, RTO, SRTT, sent=0;
 
     struct timespec begin, end;
 
@@ -22,7 +22,7 @@ int main (int argc, char *argv[]) {
     udp_data = createSocket();
     udp_data = bindSocket(udp_data, port_udp_data);
     RTT=(TWH(udp_con, n, buffer_con, port_udp_data, cliaddr, len));
-    printf("[INFO] RTT is %u µs\n", RTT);
+    printf("[INFO] RTT is %lu µs\n", RTT);
     RTO = 50000;
 
     printf("[INFO] Waiting for message being name of file to send ...\n");
@@ -51,10 +51,11 @@ int main (int argc, char *argv[]) {
                 toSend=fread(buffer_file, 1, (ACKnum==nFrags)?(lastFragSize):(MTU-6), file);
                 sprintf(buffer_data, "%6ld", ACKnum+1);
                 memcpy(buffer_data+6, buffer_file, sizeof(buffer_file));
-                (LOG) ? pass(): printf("[INFO] Sending file %lu/%lu ...\r", ACKnum+1, nFrags);
+                //(LOG) ? pass(): printf("[INFO] Sending file %lu/%lu ...\r", ACKnum+1, nFrags);
                 sendto(udp_data,(const char*)buffer_data, toSend+6, MSG_CONFIRM, (const struct sockaddr *) &cliaddr,len);
                 retransmit=0;
                 ACK_TIMERS[ACKnum]=RTO;
+                sent++;
                 (LOG) ? printf("[RETRANSMIT] ACKnum: %lu\tduplicateACK: %u\tseqNum: %lu\n", ACKnum, duplicateACK, seqNum): pass();
             } else {
                 (LOG) ? printf("[SENDING] %ld < %u\t: ", (seqNum-(ACKnum+1)), cwnd): pass();
@@ -64,11 +65,12 @@ int main (int argc, char *argv[]) {
                         toSend=fread(buffer_file, 1, (seqNum==nFrags)?(lastFragSize):(MTU-6), file);
                         sprintf(buffer_data, "%6ld", seqNum);
                         memcpy(buffer_data+6, buffer_file, sizeof(buffer_file));
-                        (LOG) ? pass(): printf("[INFO] Sending file %lu/%lu ...\r", seqNum, nFrags);
+                        //(LOG) ? pass(): printf("[INFO] Sending file %lu/%lu ...\r", seqNum, nFrags);
                         sendto(udp_data,(const char*)buffer_data, toSend+6, MSG_CONFIRM, (const struct sockaddr *) &cliaddr,len);
                         (LOG) ? printf("%lu, ", seqNum): pass();
                         ACK_TIMERS[seqNum]=RTO;
                         seqNum++;
+                        sent++;
                     } else {
                         break;
                     }
@@ -106,7 +108,7 @@ int main (int argc, char *argv[]) {
             //printf("indexes are : ");
             for(unsigned short i=seqNum-cwnd; i<seqNum; i++){
                 if(i>=ACKnum){
-                    ACK_TIMERS[i]=(tv.tv_sec*1e6+tv.tv_usec);
+                    ACK_TIMERS[i]=(tv.tv_sec*1e6+tv.tv_usec);                    
                 } 
                 //printf("{%u :%ld} ", i, ACK_TIMERS[i]);
                 if(ACK_TIMERS[i]<=0){
@@ -141,7 +143,7 @@ int main (int argc, char *argv[]) {
     double elapsed = seconds + nanoseconds*1e-9;
     printf("[INFO] Bandwith: %.3f Ko/s. Took %.4f seconds\n", length/(elapsed*1000), seconds+(nanoseconds/1e9));
     fclose(file);
-    printf("[INFO] There have been %lu timeouts and %lu retransmits in %lu messages\n", errors, retransmits, nFrags);
+    printf("[INFO] There have been %lu timeouts and %lu retransmits in %lu messages, total of %lu sent\n", errors, retransmits, nFrags, sent);
     
     return 0;
 }
