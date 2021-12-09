@@ -7,10 +7,15 @@
 #include <netinet/in.h>
 #include <sys/select.h>
 #include <sys/time.h>
+#include <time.h>
 #include <arpa/inet.h>
-#define RCVSIZE 1024
-#define LOG 1
+#define MTU 1018
+#define LOG 0
 
+unsigned long RTT_ESTIMATION(float alpha, unsigned long SRTT, unsigned long RTT)
+{ 
+    return SRTT = alpha*(SRTT)+(1-alpha)*RTT;
+}
 char pass(){
     return ' ';
 }
@@ -60,17 +65,19 @@ int bindSocket(int udpSocket, unsigned short port_udp){
     return udpSocket;
 }
 
-void TWH(int udpSocket, int n, char buffer[], unsigned short port_udp, struct sockaddr_in cliaddr, socklen_t len){
+unsigned long TWH(int udpSocket, int n, char buffer[], unsigned short port_udp, struct sockaddr_in cliaddr, socklen_t len){
+    struct timespec begin, end; 
+
     (LOG)?(printf("[INFO] Begining three way handshake waiting to receive SYN(blocking)\n")):(pass());
-    n = recvfrom(udpSocket, (char *)buffer, RCVSIZE,MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len);
+    n = recvfrom(udpSocket, (char *)buffer, MTU,MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len);
     buffer[n] = '\0';
     (LOG)?(printf("[OK] buffer_con to receive created %d\n", n)):(pass());
-    
     if(strcmp(buffer,"SYN")==0){
         (LOG)?(printf("[INFO] The buffer_con is :\n")):(pass());
         (LOG)?(printf("[DATA] %s\n", buffer)):(pass());
         char synack[11];
         char port_udp_data_s[6];
+        clock_gettime(CLOCK_REALTIME, &begin);
         strcpy(synack, "SYN-ACK");
         snprintf((char *) port_udp_data_s, 10 , "%d", port_udp ); 
         strcat(synack,port_udp_data_s);
@@ -82,12 +89,13 @@ void TWH(int udpSocket, int n, char buffer[], unsigned short port_udp, struct so
         // faire lecture fichier -> envoi -> réecriture
         sendto(udpSocket, (char *)buffer, strlen(buffer),MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
         (LOG)?(printf("[INFO] Waiting for ACK ...\n")):(pass());
-        n = recvfrom(udpSocket, (char *)buffer, RCVSIZE,MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len);
+        n = recvfrom(udpSocket, (char *)buffer, MTU,MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len);
         buffer[n] = '\0';
         (LOG)?(printf("[INFO] The buffer_con is :\n")):(pass());
         (LOG)?(printf("[DATA] %s\n", buffer)):(pass());
         if(strcmp(buffer,"ACK")==0){
             (LOG)?(printf("[OK] ACK received, succesful connection\n")):(pass());
+            clock_gettime(CLOCK_REALTIME, &end);
         // Handshake reussi !
 
         }else{
@@ -98,6 +106,9 @@ void TWH(int udpSocket, int n, char buffer[], unsigned short port_udp, struct so
         printf("[ERR] Bad SYN");
         exit(0);
     }
+    unsigned long microseconds = ((end.tv_sec*1e6) + (end.tv_nsec/1e3)) - ((begin.tv_sec*1e6) + (begin.tv_nsec/1e3));
+    printf("[INFO] Time measured: %ld µs.\n", microseconds);
+    return microseconds;
 }
 
 size_t getLengthFile(FILE *file){
@@ -105,7 +116,7 @@ size_t getLengthFile(FILE *file){
     fseek(file, 0, SEEK_END);    // Go to end
     size_t length = ftell(file); // read the position which is the size
     fseek(file, pos, SEEK_SET);
-    (LOG)?(printf("[INFO] File has a size of %lu bytes\n",length)):(pass());
+    printf("[INFO] File has a size of %lu bytes\n",length);
     return length;
 }
 
@@ -116,15 +127,15 @@ struct timeval setTimer(unsigned int seconds, unsigned int micro_seconds){
     return tv;
 }
 
-unsigned short getNumberFragments(size_t length, unsigned short *pLastFrag){
-    unsigned short numberFrags;
-    if((length % (RCVSIZE-6)) != 0){
-        numberFrags = (length/(RCVSIZE-6))+1;
-        *pLastFrag = (length % (RCVSIZE-6));
+unsigned long getNumberFragments(size_t length, unsigned short *pLastFrag){
+    unsigned long numberFrags;
+    if((length % (MTU-6)) != 0){
+        numberFrags = (length/(MTU-6))+1;
+        *pLastFrag = (length % (MTU-6));
     } else {
-        numberFrags = length/(RCVSIZE-6);
+        numberFrags = length/(MTU-6);
     }        
-    (LOG)?(printf("[OK] There needs to be %d fragments\n",numberFrags)):(pass());
+    (LOG)?(printf("[OK] There needs to be %lu fragments\n",numberFrags)):(pass());
     (LOG)?(printf("[INFO] size at the end will be %d\n", *pLastFrag)):(pass());
     return numberFrags;
 }
