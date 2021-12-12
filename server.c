@@ -29,17 +29,16 @@ int main(int argc, char *argv[])
             unsigned long lastFragSize, *pLastFrag = &lastFragSize, toSend = 0;
             char buffer_data[MTU], buffer_ack[10], buffer_file[MTU - 6];
             unsigned char retransmit = 0, timeout = 0;
-            unsigned long cwnd = 10, duplicateACK = 0, duplicateTrigger = 2;
-            unsigned long seqNum = 1, ACKnum = 0, errors = 0, retransmits = 0, nFrags, ACK, RTO, sent = 0;
+            unsigned long cwnd = 80, duplicateACK = 0, duplicateTrigger = 2;
+            unsigned long seqNum = 1, ACKnum = 0, errors = 0, retransmits = 0, nFrags, ACK, RTO= 700, sent = 0;
             struct timespec begin, end;
-            RTO = 2500;
-
+            
             if(argc == 5){
                cwnd = atoi(argv[2]);
                duplicateTrigger = atoi(argv[3]);
                RTO = atoi(argv[4]);
             }
-
+            
             (LOG) ? printf("[INFO] Waiting for message being name of file to send ...\n"): pass();
             n = recvfrom(udp_data, (char *)buffer_data, MTU, MSG_WAITALL, (struct sockaddr *)&cliaddr, &len);
             file = verifyFile(buffer_data, sizeof(buffer_data));
