@@ -8,5 +8,4 @@ server.o: server.c tools.h
 
 clean:
 	rm -rf *.o  client server
-	rm -rf client server
-	rm -rf client server
+	rm *copy_*
