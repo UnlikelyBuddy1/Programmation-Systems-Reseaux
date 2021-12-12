@@ -71,11 +71,11 @@ int main(int argc, char *argv[])
                         retransmit = 0;
                         ACK_TIMERS[ACKnum] = RTO;
                         sent++;
-                        (LOG) ? printf("[RETRANSMIT] ACKnum: %lu\tduplicateACK: %u\tseqNum: %lu\n", ACKnum, duplicateACK, seqNum) : pass();
+                        (LOG) ? printf("[RETRANSMIT] ACKnum: %lu\tduplicateACK: %lu\tseqNum: %lu\n", ACKnum, duplicateACK, seqNum) : pass();
                     }
                     else
                     {
-                        (LOG) ? printf("[SENDING] %ld < %u\t: ", (seqNum - (ACKnum + 1)), cwnd) : pass();
+                        (LOG) ? printf("[SENDING] %ld < %lu\t: ", (seqNum - (ACKnum + 1)), cwnd) : pass();
                         while ((seqNum - (ACKnum + 1)) < cwnd)
                         {
                             if (seqNum <= nFrags)

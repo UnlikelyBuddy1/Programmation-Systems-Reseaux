@@ -133,7 +133,7 @@ unsigned long getNumberFragments(size_t length, unsigned long *pLastFrag){
         numberFrags = length/(MTU-6);
     }        
     (LOG)?(printf("[OK] There needs to be %lu fragments\n",numberFrags)):(pass());
-    (LOG)?(printf("[INFO] size at the end will be %d\n", *pLastFrag)):(pass());
+    (LOG)?(printf("[INFO] size at the end will be %lu\n", *pLastFrag)):(pass());
     return numberFrags;
 }
 
