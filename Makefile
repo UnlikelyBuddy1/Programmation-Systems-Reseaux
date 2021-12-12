@@ -1,4 +1,4 @@
-all: server server2
+all: server
 
 server: server.o
 	gcc server.o -o server
