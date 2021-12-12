@@ -28,10 +28,10 @@ int main(int argc, char *argv[])
         {
             printf("[INFO] PID is %d\n", pid);
             FILE *file;
-            unsigned short lastFragSize, *pLastFrag = &lastFragSize, toSend = 0;
+            unsigned long lastFragSize, *pLastFrag = &lastFragSize, toSend = 0;
             char buffer_data[MTU], buffer_ack[10], buffer_file[MTU - 6];
             unsigned char retransmit = 0, timeout = 0;
-            unsigned short cwnd = 10, duplicateACK = 0, duplicateTrigger = 2;
+            unsigned long cwnd = 10, duplicateACK = 0, duplicateTrigger = 2;
             unsigned long seqNum = 1, ACKnum = 0, errors = 0, retransmits = 0, nFrags, ACK, RTO, sent = 0;
             struct timespec begin, end;
 
@@ -71,11 +71,11 @@ int main(int argc, char *argv[])
                         retransmit = 0;
                         ACK_TIMERS[ACKnum] = RTO;
                         sent++;
-                        (LOG) ? printf("[RETRANSMIT] ACKnum: %lu\tduplicateACK: %u\tseqNum: %lu\n", ACKnum, duplicateACK, seqNum) : pass();
+                        (LOG) ? printf("[RETRANSMIT] ACKnum: %lu\tduplicateACK: %lu\tseqNum: %lu\n", ACKnum, duplicateACK, seqNum) : pass();
                     }
                     else
                     {
-                        (LOG) ? printf("[SENDING] %ld < %u\t: ", (seqNum - (ACKnum + 1)), cwnd) : pass();
+                        (LOG) ? printf("[SENDING] %ld < %lu\t: ", (seqNum - (ACKnum + 1)), cwnd) : pass();
                         while ((seqNum - (ACKnum + 1)) < cwnd)
                         {
                             if (seqNum <= nFrags)

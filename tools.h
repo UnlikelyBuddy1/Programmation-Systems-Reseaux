@@ -124,7 +124,7 @@ struct timeval setTimer(unsigned int seconds, unsigned int micro_seconds){
     return tv;
 }
 
-unsigned long getNumberFragments(size_t length, unsigned short *pLastFrag){
+unsigned long getNumberFragments(size_t length, unsigned long *pLastFrag){
     unsigned long numberFrags;
     if((length % (MTU-6)) != 0){
         numberFrags = (length/(MTU-6))+1;
@@ -133,7 +133,7 @@ unsigned long getNumberFragments(size_t length, unsigned short *pLastFrag){
         numberFrags = length/(MTU-6);
     }        
     (LOG)?(printf("[OK] There needs to be %lu fragments\n",numberFrags)):(pass());
-    (LOG)?(printf("[INFO] size at the end will be %d\n", *pLastFrag)):(pass());
+    (LOG)?(printf("[INFO] size at the end will be %lu\n", *pLastFrag)):(pass());
     return numberFrags;
 }
 
@@ -150,10 +150,4 @@ FILE *verifyFile(char buffer[], int size){
             (LOG)?(printf("[OK] Found file %s\n", filename)):(pass());
         }
     return file;
-}
-
-void verifyContents(char buffer[], char buffer2[], unsigned int start, unsigned int end){
-    for(unsigned int i=start; i<end; i++){
-        printf("content is : src %x dest %x\n", buffer[i], buffer2[i]);
-    }
 }
