@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
                     FD_ZERO(&socket);
                     FD_SET(udp_data, &socket);
 
-                    for (unsigned short i = seqNum - cwnd; i < seqNum; i++)
+                    for (unsigned long i = seqNum - cwnd; i < seqNum; i++)
                     {
                         if (i >= ACKnum)
                         {
