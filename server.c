@@ -11,22 +11,20 @@ int main(int argc, char *argv[])
     memset(&cliaddr, 0, sizeof(cliaddr));
 
     verifyArguments(argc, argv, pport_udp_con);
+
     udp_con = createSocket();
     udp_con = bindSocket(udp_con, port_udp_con);
-    printf("Mon PID est %i\n", getpid());
     while (1)
     {
         k++;
-        printf("waiting for client connexions, creating socket on port %u\n", k);
         udp_data = createSocket();
         udp_data = bindSocket(udp_data, port_udp_con + k);
         TWH(udp_con, n, buffer_con, port_udp_con + k, cliaddr, len);
-        printf("a client is connecting\n");
 
         pid = fork();
         if (pid == 0)
         {
-            printf("[INFO] PID is %d\n", pid);
+            
             FILE *file;
             unsigned long lastFragSize, *pLastFrag = &lastFragSize, toSend = 0;
             char buffer_data[MTU], buffer_ack[10], buffer_file[MTU - 6];
@@ -34,10 +32,15 @@ int main(int argc, char *argv[])
             unsigned long cwnd = 10, duplicateACK = 0, duplicateTrigger = 2;
             unsigned long seqNum = 1, ACKnum = 0, errors = 0, retransmits = 0, nFrags, ACK, RTO, sent = 0;
             struct timespec begin, end;
-
             RTO = 2500;
 
-            printf("[INFO] Waiting for message being name of file to send ...\n");
+            if(argc == 5){
+               cwnd = atoi(argv[2]);
+               duplicateTrigger = atoi(argv[3]);
+               RTO = atoi(argv[4]);
+            }
+
+            (LOG) ? printf("[INFO] Waiting for message being name of file to send ...\n"): pass();
             n = recvfrom(udp_data, (char *)buffer_data, MTU, MSG_WAITALL, (struct sockaddr *)&cliaddr, &len);
             file = verifyFile(buffer_data, sizeof(buffer_data));
             size_t length = getLengthFile(file);
@@ -66,7 +69,7 @@ int main(int argc, char *argv[])
                         toSend = fread(buffer_file, 1, (ACKnum == nFrags) ? (lastFragSize) : (MTU - 6), file);
                         sprintf(buffer_data, "%6ld", ACKnum + 1);
                         memcpy(buffer_data + 6, buffer_file, sizeof(buffer_file));
-                        (LOG) ? pass() : printf("[INFO] Sending file %lu/%lu ...\r", ACKnum + 1, nFrags);
+                        //(LOG) ? pass() : printf("[INFO] Sending file %lu/%lu ...\r", ACKnum + 1, nFrags);
                         sendto(udp_data, (const char *)buffer_data, toSend + 6, MSG_CONFIRM, (const struct sockaddr *)&cliaddr, len);
                         retransmit = 0;
                         ACK_TIMERS[ACKnum] = RTO;
@@ -84,7 +87,7 @@ int main(int argc, char *argv[])
                                 toSend = fread(buffer_file, 1, (seqNum == nFrags) ? (lastFragSize) : (MTU - 6), file);
                                 sprintf(buffer_data, "%6ld", seqNum);
                                 memcpy(buffer_data + 6, buffer_file, sizeof(buffer_file));
-                                (LOG) ? pass() : printf("[INFO] Sending file %lu/%lu ...\r", seqNum, nFrags);
+                                //(LOG) ? pass() : printf("[INFO] Sending file %lu/%lu ...\r", seqNum, nFrags);
                                 sendto(udp_data, (const char *)buffer_data, toSend + 6, MSG_CONFIRM, (const struct sockaddr *)&cliaddr, len);
                                 (LOG) ? printf("%lu, ", seqNum) : pass();
                                 ACK_TIMERS[seqNum] = RTO;
@@ -170,9 +173,11 @@ int main(int argc, char *argv[])
             long seconds = end.tv_sec - begin.tv_sec;
             long nanoseconds = end.tv_nsec - begin.tv_nsec;
             double elapsed = seconds + nanoseconds * 1e-9;
-            printf("[INFO] Bandwith: %.3f Ko/s. Took %.4f seconds\n", length / (elapsed * 1000), seconds + (nanoseconds / 1e9));
+            double bandwith = length / (elapsed * 1000);
+            //printf("[INFO] Bandwith: %.3f Ko/s. Took %.4f seconds\n", bandwith, elapsed);
             fclose(file);
-            printf("[INFO] There have been %lu timeouts and %lu retransmits in %lu messages, total of %lu sent\n", errors, retransmits, nFrags, sent);
+            //printf("[INFO] There have been %lu timeouts and %lu retransmits in %lu messages, total of %lu sent\n", errors, retransmits, nFrags, sent);
+            printf("%lu:%lu:%lu=%.0f:%.2f:%lu:%lu:%lu:%lu\n", cwnd, duplicateTrigger, RTO, bandwith, elapsed, nFrags, errors, retransmits, sent);
             close(udp_data);
             exit(0);
         } else {
