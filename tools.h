@@ -9,7 +9,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <arpa/inet.h>
-#define MTU 1018
+#define MTU 1500
 #define LOG 0
 
 unsigned long RTT_ESTIMATION(float alpha, unsigned long SRTT, unsigned long RTT)
@@ -19,7 +19,7 @@ unsigned long RTT_ESTIMATION(float alpha, unsigned long SRTT, unsigned long RTT)
 char pass(){
     return ' ';
 }
-void verifyArguments(int argc, char *argv[], unsigned short *port_udp_con, unsigned short *port_udp_data){
+void verifyArguments(int argc, char *argv[], unsigned short *port_udp_con){
     if(argc > 2){
         perror("[ERR] Too many arguments\n");
         exit(0);
@@ -29,12 +29,9 @@ void verifyArguments(int argc, char *argv[], unsigned short *port_udp_con, unsig
         exit(0);
     }
     if(argc == 2){
-        int n = 1;
         *port_udp_con = atoi(argv[1]);
-        *port_udp_data = atoi(argv[1])+n;
-        n++;
     }
-    (LOG)?(printf("[OK] Ports used are %d and %d\n", *port_udp_con, *port_udp_data)):(pass());
+    (LOG)?(printf("[OK] Port used is %d\n", *port_udp_con)):(pass());
 }
 
 int createSocket(){
@@ -65,7 +62,7 @@ int bindSocket(int udpSocket, unsigned short port_udp){
     return udpSocket;
 }
 
-unsigned long TWH(int udpSocket, int n, char buffer[], unsigned short port_udp, struct sockaddr_in cliaddr, socklen_t len){
+void TWH(int udpSocket, int n, char buffer[], unsigned short port_udp, struct sockaddr_in cliaddr, socklen_t len){
     struct timespec begin, end; 
 
     (LOG)?(printf("[INFO] Begining three way handshake waiting to receive SYN(blocking)\n")):(pass());
@@ -108,7 +105,7 @@ unsigned long TWH(int udpSocket, int n, char buffer[], unsigned short port_udp, 
     }
     unsigned long microseconds = ((end.tv_sec*1e6) + (end.tv_nsec/1e3)) - ((begin.tv_sec*1e6) + (begin.tv_nsec/1e3));
     printf("[INFO] Time measured: %ld µs.\n", microseconds);
-    return microseconds;
+    return ;
 }
 
 size_t getLengthFile(FILE *file){
