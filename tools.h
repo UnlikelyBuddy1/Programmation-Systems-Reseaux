@@ -20,7 +20,7 @@ char pass(){
     return ' ';
 }
 void verifyArguments(int argc, char *argv[], unsigned short *port_udp_con){
-    if(argc > 2){
+    if(argc > 5){
         perror("[ERR] Too many arguments\n");
         exit(0);
     }
@@ -28,7 +28,7 @@ void verifyArguments(int argc, char *argv[], unsigned short *port_udp_con){
         perror("[ERR] Argument expected\n");
         exit(0);
     }
-    if(argc == 2){
+    else{
         *port_udp_con = atoi(argv[1]);
     }
     (LOG)?(printf("[OK] Port used is %d\n", *port_udp_con)):(pass());
@@ -104,7 +104,7 @@ void TWH(int udpSocket, int n, char buffer[], unsigned short port_udp, struct so
         exit(0);
     }
     unsigned long microseconds = ((end.tv_sec*1e6) + (end.tv_nsec/1e3)) - ((begin.tv_sec*1e6) + (begin.tv_nsec/1e3));
-    printf("[INFO] Time measured: %ld µs.\n", microseconds);
+    (LOG)?printf("[INFO] Time measured: %ld µs.\n", microseconds):pass();
     return ;
 }
 
@@ -113,7 +113,7 @@ size_t getLengthFile(FILE *file){
     fseek(file, 0, SEEK_END);    // Go to end
     size_t length = ftell(file); // read the position which is the size
     fseek(file, pos, SEEK_SET);
-    printf("[INFO] File has a size of %lu bytes\n",length);
+    (LOG)?printf("[INFO] File has a size of %lu bytes\n",length): pass();
     return length;
 }
 
