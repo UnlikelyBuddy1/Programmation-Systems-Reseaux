@@ -11,17 +11,18 @@ int main(int argc, char *argv[]) {
     udp_con = createSocket();
     udp_con = bindSocket(udp_con, port_udp_con);
 
-    unsigned long testcwnd=10, testRTO=100;
+    signed long testcwnd=10, testRTO=-900;
 
-    while (testcwnd<200) {
-        k++;
-        if(k%3==0){
-            testRTO=testRTO+1000;
-            if(testRTO>25100){
-                testRTO=100;
-                testcwnd=testcwnd+10;
-            }
+    while (testcwnd<1010) {
+        testRTO=testRTO+1000;
+        if(testRTO>10100){
+            testRTO=100;
+            testcwnd=testcwnd+100;
         }
+        if(testcwnd>1010){
+            break;
+        }
+        k++;
         udp_data = createSocket();
         udp_data = bindSocket(udp_data, port_udp_con + k);
         TWH(udp_con, n, buffer_con, port_udp_con + k, cliaddr, len);
@@ -148,7 +149,7 @@ int main(int argc, char *argv[]) {
                 (LOG) ? printf("[INFO] ACKnum is %lu and nFrags is %lu\n", ACKnum, nFrags): pass();
             }
             clock_gettime(CLOCK_REALTIME, &end);
-            for(unsigned char fin=0; fin<cwnd; fin++){
+            for(unsigned char fin=0; fin<cwnd+10; fin++){
                 sendto(udp_data, "FINFINFINFIN", strlen("FINFINFINFIN"), MSG_CONFIRM, (const struct sockaddr *)&cliaddr, len);
                 usleep(2000);
             }
@@ -159,7 +160,7 @@ int main(int argc, char *argv[]) {
             //printf("[INFO] Bandwith: %.3f Ko/s. Took %.4f seconds\n", bandwith, elapsed);
             fclose(file);
             //printf("[INFO] There have been %lu timeouts and %lu retransmits in %lu messages, total of %lu sent\n", errors, retransmits, nFrags, sent);
-            printf("%lu:%lu:%lu=%.0f:%.2f:%lu:%lu:%lu:%lu\n", cwnd, duplicateTrigger, RTO, bandwith, elapsed, nFrags, errors, retransmits, sent);
+            printf("%lu:%lu=%.0f:%lu:%lu:%lu:%lu\n", cwnd, RTO, bandwith, nFrags, errors, retransmits, sent);
             //printf("%.0f\n", bandwith);
             close(udp_data);
             exit(0);
