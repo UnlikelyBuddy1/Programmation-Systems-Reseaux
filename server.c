@@ -10,8 +10,18 @@ int main(int argc, char *argv[]) {
     verifyArguments(argc, argv, pport_udp_con);
     udp_con = createSocket();
     udp_con = bindSocket(udp_con, port_udp_con);
-    while (1) {
+
+    unsigned long testcwnd=10, testRTO=100;
+
+    while (testcwnd<200) {
         k++;
+        if(k%3==0){
+            testRTO=testRTO+50;
+            if(testRTO>2500){
+                testRTO=100;
+                testcwnd=testcwnd+5;
+            }
+        }
         udp_data = createSocket();
         udp_data = bindSocket(udp_data, port_udp_con + k);
         TWH(udp_con, n, buffer_con, port_udp_con + k, cliaddr, len);
