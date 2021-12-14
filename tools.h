@@ -62,7 +62,7 @@ int bindSocket(int udpSocket, unsigned short port_udp){
     return udpSocket;
 }
 
-void TWH(int udpSocket, int n, char buffer[], unsigned short port_udp, struct sockaddr_in cliaddr, socklen_t len){
+unsigned long TWH(int udpSocket, int n, char buffer[], unsigned short port_udp, struct sockaddr_in cliaddr, socklen_t len){
     struct timespec begin, end; 
 
     (LOG)?(printf("[INFO] Begining three way handshake waiting to receive SYN(blocking)\n")):(pass());
@@ -105,7 +105,7 @@ void TWH(int udpSocket, int n, char buffer[], unsigned short port_udp, struct so
     }
     unsigned long microseconds = ((end.tv_sec*1e6) + (end.tv_nsec/1e3)) - ((begin.tv_sec*1e6) + (begin.tv_nsec/1e3));
     (LOG)?printf("[INFO] Time measured: %ld µs.\n", microseconds):pass();
-    return ;
+    return microseconds;
 }
 
 size_t getLengthFile(FILE *file){

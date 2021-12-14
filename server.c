@@ -11,21 +11,24 @@ int main(int argc, char *argv[]) {
     udp_con = createSocket();
     udp_con = bindSocket(udp_con, port_udp_con);
 
-    signed long testcwnd=10, testRTO=-900;
+    signed long testcwnd=25, testRTO=550;
+    unsigned long RTT;
 
-    while (testcwnd<1010) {
-        testRTO=testRTO+1000;
-        if(testRTO>10100){
-            testRTO=100;
-            testcwnd=testcwnd+100;
+    while (testcwnd<=45) {
+        testRTO=testRTO+50;
+        if(testRTO>1600){
+            testRTO=600;
+            testcwnd=testcwnd+5;
         }
-        if(testcwnd>1010){
+        if(testcwnd>45){
             break;
         }
         k++;
         udp_data = createSocket();
         udp_data = bindSocket(udp_data, port_udp_con + k);
-        TWH(udp_con, n, buffer_con, port_udp_con + k, cliaddr, len);
+        RTT=TWH(udp_con, n, buffer_con, port_udp_con + k, cliaddr, len);
+        printf("%lu\n", RTT);
+        testRTO=2*RTT;
         pid = fork();
         if (pid == 0){
             FILE *file;

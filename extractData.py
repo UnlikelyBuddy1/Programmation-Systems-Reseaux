@@ -13,7 +13,7 @@ outputs=[]
 cwnd=[]
 rto=[]
 
-with open("logs.txt", "r") as logs:
+with open("logs.csv", "r") as logs:
     lines = logs.readlines()
     for line in lines:
         line=line.replace('\n', '')
@@ -43,5 +43,5 @@ print(rto[maxIndex])
 
 fig, ax = plt.subplots()
 ax = plt.axes(projection='3d')
-ax.plot3D(cwnd, rto, bandwidth, 'red')
+ax.scatter3D(cwnd, rto, bandwidth, 'red')
 plt.show()
