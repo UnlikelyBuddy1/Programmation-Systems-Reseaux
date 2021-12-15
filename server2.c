@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
             //printf("[INFO] Bandwith: %.3f Ko/s. Took %.4f seconds\n", bandwith, elapsed);
             fclose(file);
             //printf("[INFO] There have been %lu timeouts and %lu retransmits in %lu messages, total of %lu sent\n", errors, retransmits, nFrags, sent);
-            printf("%lu:%lu=%.0f:%lu:%lu:%lu:%lu\n", cwnd, RTO, bandwith, nFrags, errors, retransmits, sent);
+            //printf("%lu:%lu=%.0f:%lu:%lu:%lu:%lu\n", cwnd, RTO, bandwith, nFrags, errors, retransmits, sent);
             //printf("%.0f\n", bandwith);
             close(udp_data);
             exit(0);
