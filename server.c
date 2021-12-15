@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
                         while ((seqNum - (ACKnum + 1)) < cwnd) {
                             if (seqNum <= nFrags){
                                 fseek(file, (seqNum - 1) * (MTU - 6), SEEK_SET);
-                                toSend = fread(buffer_file, 1, (seqNum == nFrags) ? (lastFragSize) : (MTU - 6), file);
+                                toSend = fread(buffer_file, 1, (seqNum-1 == nFrags) ? (lastFragSize) : (MTU - 6), file);
                                 sprintf(buffer_data, "%6ld", seqNum);
                                 memcpy(buffer_data + 6, buffer_file, sizeof(buffer_file));
                                 //(LOG) ? pass() : printf("[INFO] Sending file %lu/%lu ...\r", seqNum, nFrags);
