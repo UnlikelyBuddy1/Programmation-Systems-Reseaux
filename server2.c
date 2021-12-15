@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
             unsigned long lastFragSize, *pLastFrag = &lastFragSize, toSend = 0;
             char buffer_data[MTU], buffer_ack[10], buffer_file[MTU - 6];
             unsigned char retransmit = 0, timeout = 0;
-            unsigned long cwnd = 55, duplicateACK = 0, duplicateTrigger = 3;
+            unsigned long cwnd = 35, duplicateACK = 0, duplicateTrigger = 3;
             unsigned long seqNum = 1, ACKnum = 0, errors = 0, retransmits = 0, nFrags, ACK, RTO= RTT*2, sent = 0;
             struct timespec begin, end;
             if(argc == 5){

@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
+import matplotlib.pylab as pl
 
 perfs={}
 bandwidth=[]
@@ -13,7 +14,7 @@ outputs=[]
 cwnd=[]
 rto=[]
 
-with open("logs.csv", "r") as logs:
+with open("cwnd.csv", "r") as logs:
     lines = logs.readlines()
     for line in lines:
         line=line.replace('\n', '')
@@ -37,11 +38,38 @@ def findMax(array):
             max=index
     return max
 
+def findMin(array):
+    min=0
+    for index in range(0, len(array)):
+        if array[index] < array[min]:
+            min=index
+    return min
+
+def calculateMean(arrayCwnd, arrayBandwidth):
+    meaned=[]
+    mean=[]
+    actualCwnd=arrayCwnd[0]
+    sum=0
+    for i in range(0, len(arrayCwnd)):
+        if arrayCwnd[i]==actualCwnd:
+            mean.append(arrayBandwidth[i])
+        else:
+            print(arrayCwnd[i])
+            sum=0
+            for means in mean:
+                sum=sum+means
+            meaned.append((sum/len(mean)))
+            mean=[]
+            sum=0
+            actualCwnd=arrayCwnd[i]
+            mean.append(arrayBandwidth[i])
+    return meaned
+mean=calculateMean(cwnd, bandwidth)
+x_values=np.arange(cwnd[findMin(cwnd)], cwnd[findMax(cwnd)], 2)
+print(x_values)
 maxIndex= findMax(bandwidth)
-print(cwnd[maxIndex])
-print(rto[maxIndex])
 
 fig, ax = plt.subplots()
-ax = plt.axes(projection='3d')
-ax.scatter3D(cwnd, rto, bandwidth, 'red')
+fig.suptitle('Bandwidth at different CWNDs and Semi-Auto RTO', fontsize=16)
+ax.plot(x_values, mean)
 plt.show()
